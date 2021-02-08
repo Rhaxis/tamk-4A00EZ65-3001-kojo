@@ -1,34 +1,35 @@
 import React from "react";
 import {
   Text,
-  ScrollView,
+  FlatList,
   View,
   StyleSheet,
-  TouchableHighlight,
-  TouchableOpacity,
-  TouchableNativeFeedback,
-  TouchableWithoutFeedback,
+  TouchableOpacity
 } from "react-native";
 
 const ItemList = (props) => {
-  let index = 0;
-
   return (
-    <ScrollView>
-      {props.data.map((item) => {
-        index++;
+    <FlatList
+      data={props.data}
+      renderItem={({ item, index }) => {
         return (
-          <TouchableHighlight onPress={() => props.onItemPress(item.key)}>
-            <View
-              key={item.key}
-              style={index % 2 == 0 ? styles.itemEven : styles.itemOdd}
+          <View
+            style={
+              [index % 2 == 0 ? styles.itemEven : styles.itemOdd,
+              styles.itemCommon
+              ]}
+          >
+            <TouchableOpacity
+              onPress={() => props.onPress(item.key)}
+              onLongPress={() => props.onLongPress(item.key)}
             >
-              <Text>{item.text}</Text>
-            </View>
-          </TouchableHighlight>
+              <Text style={styles.text}>{item.text}</Text>
+            </TouchableOpacity>
+          </View>
         );
-      })}
-    </ScrollView>
+      }
+      }
+    />
   );
 };
 
@@ -36,9 +37,16 @@ export default ItemList;
 
 const styles = StyleSheet.create({
   itemOdd: {
-    backgroundColor: "#b2fffd",
+    backgroundColor: "#b2fffd"
   },
   itemEven: {
-    backgroundColor: "white",
+    backgroundColor: "white"
   },
+  itemCommon: {
+    height: 30,
+    justifyContent: "center"
+  },
+  text: {
+    marginLeft: 5
+  }
 });
