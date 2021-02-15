@@ -1,21 +1,27 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Button } from 'react-native';
+import { StyleSheet, View, Button, Image } from 'react-native';
 import Constants from "expo-constants";
 import uuid from "uuid";
 
 // Importataan omat moduulit järjestelmämoduulien jälkeen
 import ItemList from "./Components/ItemList";
 import EditTask from "./Components/EditTask";
+import CameraView from "./Components/CameraView";
+import ImageView from "./Components/ImageView";
 
 import { SaveTasks, LoadTasks } from "./Data/TaskStorage";
 
-import {Priority} from "./Data/Enums";
+import { Priority } from "./Data/Enums";
 
 export default function App() {
+  
+  const [images, setImages] = useState(['https://reactnative.dev/img/tiny_logo.png', 'https://placeimg.com/640/640/nature',
+    'https://placeimg.com/640/640/animals',
+    'https://placeimg.com/640/640/beer'])
+
   // Tallennetaan käyttäjän syöttämä teksti siten, että se ei häviä uudelleen piirron
   // yhteydesä
-
   const [tasks, setTasks] = useState([]);
 
   // Oletuksena EditTask-näkymä ei ole aktiivinen
@@ -23,6 +29,8 @@ export default function App() {
 
   // Viittaus valittuun taskiin. Jos undefined, mitään ei ole valittu
   const [selectedTask, setSelectedTask] = useState(undefined);
+
+  const [isCameraVisible, setIsCameraVisible] = useState(false);
 
   const loadData = async () => {
     console.log("Loading Tasks");
@@ -40,34 +48,52 @@ export default function App() {
   useEffect(() => {
     console.log("Saving tasks")
     SaveTasks(tasks);
+    console.log(tasks)
   }, [tasks]);
 
+ 
+  const newImageHandler = (imagePath) => {
+    setImages([...images, imagePath])
+  }
   // ... spread operator. Pulls items out of an array. In our case it is used to create a
   // new array
   const addTaskHandler = (task) => {
+    // TODO: Replace mock values with real data
+    let newTask = createTask("", task, "", "", "", Date.now(), Priority.medium);
+
+    console.log(newTask);
+
     if (selectedTask !== undefined) {
       selectedTask.text = task;
 
-      // This has to be done because the tasks list itself doensn't change and thus useEffect is not triggered.
-      SaveTasks(tasks); 
+      let updatedTasks = tasks.filter((task) => task.key !== selectedTask.key);
+      setTasks([...updatedTasks, newTask]);
+
+      // This has to be done because the tasks list itself doensn't change and
+      // thus useEffect is not triggered.
+      // SaveTasks(tasks);
     }
     else {
-      setTasks([...tasks, {
-          // missing date variable for task deadline
-          key: uuid.v4(),
-          title: "title",
-          text: task,
-          location: {
-            latitude: 55.55,
-            longitude: 66.66,
-          },
-          picPath: "path abc",
-          priority: Priority.medium,
-        }]);
+      setTasks([...tasks, newTask]);
     }
 
     // Taskin lisäämisen jälkeen suljetaan Edit-näkymä
-    ShowEditView(false);
+    showEditView(false);
+  }
+
+  const createTask = (title, text, picPath, latitude, longitude, date, priority) => {
+    return {
+      key: uuid.v4(),
+      title,
+      text,
+      picPath,
+      coordinate: {
+        latitude,
+        longitude
+      },
+      date,
+      priority
+    };
   }
 
   const onRemove = (key) => {
@@ -77,16 +103,20 @@ export default function App() {
   const onItemPressed = (key) => {
     let currentTask = tasks.find(task => task.key == key);
     setSelectedTask(currentTask);
-    ShowEditView(true);
+    showEditView(true);
   }
 
-  const ShowEditView = (isShown) => {
+  const showEditView = (isShown) => {
     // Tyhjentää valitun taskin sulkemisen yhteydessä
     if (!isShown) {
       setSelectedTask(undefined);
     }
 
     setEditViewVisibility(isShown);
+  };
+
+  const closeCamera = () => {
+    setIsCameraVisible(false);
   };
 
   return (
@@ -107,10 +137,16 @@ export default function App() {
       <EditTask
         onSubmitPressed={addTaskHandler}
         isVisible={isEditViewVisible}
-        closeView={() => ShowEditView(false)}
+        closeView={() => showEditView(false)}
         text={selectedTask !== undefined ? selectedTask.text : undefined}
       />
-      <Button title="Add task" onPress={() => ShowEditView(true)} />
+     
+      <ImageView photoArray={images}/>
+     
+      <Button title="Add task" onPress={() => showEditView(true)} />
+
+      <CameraView isVisible={isCameraVisible} onClosePressed={closeCamera} photoArray={images} onPictureTaken={newImageHandler} />
+      <Button title="Open camera" onPress={() => setIsCameraVisible(true)} />
 
     </View>
   );
