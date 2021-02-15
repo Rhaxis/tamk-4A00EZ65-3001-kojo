@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { GetPriority } from "./Enums";
 
 const STORAGE_KEY = "Tasks";
 
@@ -11,7 +12,12 @@ export const LoadTasks = async () => {
         else {
             // TODO: Might need some post processing. It might be that JSON.parse can not 
             // convert string JSON object into an object correctly
-            tasks = JSON.parse(tasks);
+            tasks = JSON.parse(tasks).map((task) => {
+                task.date = new Date(task.date);
+                task.priority = GetPriority(task.priority);
+                return task;
+            });
+            console.log(tasks);
         }
         return tasks;
     }
